@@ -1,0 +1,167 @@
+name: gravitino-quickstart
+
+x-postgres-common: &postgres-common
+  image: postgres:15
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U postgres"]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+
+services:
+
+  # ─── PostgreSQL ───────────────────────────────────────────────
+  postgres:
+    <<: *postgres-common
+    container_name: gqs-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - gqsnet
+
+  # ─── Gravitino ────────────────────────────────────────────────
+  gravitino:
+    build: ./gravitino
+    container_name: gqs-gravitino
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    volumes:
+      - gravitino_data:/gravitino/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8090/api/version || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - gqsnet
+
+  # ─── Hive Metastore ───────────────────────────────────────────
+  hms:
+    build: ./hms
+    container_name: gqs-hms
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: metastore
+    ports:
+      - "9083:9083"
+    volumes:
+      - hive_data:/data/hive
+      - nyc_taxi_data:/data/nyc_taxi
+    networks:
+      - gqsnet
+
+  # ─── Trino ────────────────────────────────────────────────────
+  trino:
+    build: ./trino
+    container_name: gqs-trino
+    depends_on:
+      gravitino:
+        condition: service_healthy
+    volumes:
+      - nyc_taxi_data:/data/nyc_taxi
+    ports:
+      - "8082:8082"
+    networks:
+      - gqsnet
+
+  # ─── CloudBeaver ──────────────────────────────────────────────
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: gqs-cloudbeaver
+    depends_on:
+      - trino
+    ports:
+      - "8978:8978"
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    networks:
+      - gqsnet
+
+  # ─── Airflow ──────────────────────────────────────────────────
+  airflow-init:
+    image: apache/airflow:2.9.0
+    container_name: gqs-airflow-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres/airflow_meta
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__WEBSERVER__SECRET_KEY: gravitino-quickstart
+    command: db init
+    networks:
+      - gqsnet
+
+  airflow-webserver:
+    image: apache/airflow:2.9.0
+    container_name: gqs-airflow-webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    ports:
+      - "8083:8080"
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres/airflow_meta
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__WEBSERVER__SECRET_KEY: gravitino-quickstart
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    command: webserver
+    networks:
+      - gqsnet
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.0
+    container_name: gqs-airflow-scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres/airflow_meta
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__WEBSERVER__SECRET_KEY: gravitino-quickstart
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    command: scheduler
+    networks:
+      - gqsnet
+
+  # ─── Init ─────────────────────────────────────────────────────
+  init:
+    build: ./init
+    container_name: gqs-init
+    depends_on:
+      gravitino:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - nyc_taxi_data:/data/nyc_taxi
+      - hive_data:/data/hive
+    networks:
+      - gqsnet
+
+networks:
+  gqsnet:
+    name: gqsnet
+    driver: bridge
+
+volumes:
+  postgres_data:
+  gravitino_data:
+  hive_data:
+  cloudbeaver_data:
+  nyc_taxi_data:
