@@ -17,6 +17,13 @@ until pg_isready -h postgres -U postgres > /dev/null 2>&1; do
 done
 echo "PostgreSQL ready."
 
+# Wait for Trino
+echo "Waiting for Trino..."
+until curl -sf http://trino:8082/v1/info > /dev/null; do
+    sleep 2
+done
+echo "Trino ready."
+
 # Create metalake
 echo "Creating metalake..."
 curl -sf -X POST http://gravitino:8090/api/metalakes \

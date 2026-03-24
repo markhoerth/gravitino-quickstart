@@ -1,6 +1,5 @@
 """Register all Gravitino catalogs for the quickstart."""
 import requests
-import sys
 
 BASE = "http://gravitino:8090"
 METALAKE = "demo"
@@ -41,20 +40,15 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     }
 })
 
-# Iceberg catalog (NYC taxi queryable)
+# Iceberg catalog (NYC taxi via standalone Gravitino IRC + MinIO)
 post(f"/api/metalakes/{METALAKE}/catalogs", {
     "name": "iceberg_nyc",
     "type": "RELATIONAL",
     "provider": "lakehouse-iceberg",
-    "comment": "NYC taxi Iceberg catalog",
+    "comment": "NYC taxi Iceberg catalog (MinIO-backed)",
     "properties": {
-        "catalog-backend": "jdbc",
-        "uri": "jdbc:postgresql://postgres:5432/iceberg_catalog",
-        "jdbc-driver": "org.postgresql.Driver",
-        "jdbc-user": "gravitino",
-        "jdbc-password": "gravitino",
-        "jdbc-initialize": "true",
-        "warehouse": "/data/iceberg"
+        "catalog-backend": "rest",
+        "uri": "http://irc:9001/iceberg"
     }
 })
 
