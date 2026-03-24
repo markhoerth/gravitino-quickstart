@@ -48,7 +48,8 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     "comment": "NYC taxi Iceberg catalog (MinIO-backed)",
     "properties": {
         "catalog-backend": "rest",
-        "uri": "http://irc:9001/iceberg"
+        "uri": "http://irc:9001/iceberg",
+        "warehouse": "s3://iceberg/nyc_taxi"
     }
 })
 
