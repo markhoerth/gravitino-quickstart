@@ -143,14 +143,17 @@ services:
 
   # ─── CloudBeaver ──────────────────────────────────────────────
   cloudbeaver:
-    image: dbeaver/cloudbeaver:latest
+    build: ./cloudbeaver
     container_name: gqs-cloudbeaver
+    environment:
+      CB_SERVER_NAME: "Gravitino Quickstart"
+      CB_SERVER_URL: "http://localhost:8978"
+      CB_ADMIN_NAME: "cbadmin"
+      CB_ADMIN_PASSWORD: "Admin1234"
     depends_on:
       - trino
     ports:
       - "8978:8978"
-    volumes:
-      - cloudbeaver_data:/opt/cloudbeaver/workspace
     networks:
       - gqsnet
 
