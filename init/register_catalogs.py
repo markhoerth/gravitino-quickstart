@@ -28,12 +28,12 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     }
 })
 
-# Hive catalog (NYC taxi via HMS)
+# Hive catalog — NYC taxi data via local filesystem HMS
 post(f"/api/metalakes/{METALAKE}/catalogs", {
     "name": "hive_nyc",
     "type": "RELATIONAL",
     "provider": "hive",
-    "comment": "NYC taxi data via Hive",
+    "comment": "NYC taxi data via Hive (local filesystem)",
     "properties": {
         "metastore.uris": "thrift://hms:9083",
         "gravitino.bypass.hive.metastore.client.capability.check": "false"
@@ -58,7 +58,7 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     "name": "fileset_nyc",
     "type": "FILESET",
     "provider": "hadoop",
-    "comment": "NYC taxi Parquet files - governance layer",
+    "comment": "NYC taxi Parquet files — governance layer",
     "properties": {
         "location": "file:///data/nyc_taxi"
     }

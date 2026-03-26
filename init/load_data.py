@@ -309,4 +309,118 @@ except Exception as e:
     print(f"[warn] Iceberg load check failed: {e}")
 
 print("Iceberg init complete.")
+
+# ── LakeFS HMS: create schemas and external tables per branch ─────────────────
+# The hive_lakefs catalog federates two HMS schemas:
+#   lakefs_main  →  s3a://quickstart/main/data/   (production snapshot)
+#   lakefs_dev   →  s3a://quickstart/dev/data/    (isolated dev branch)
+#
+# Tables are EXTERNAL — the data lives in LakeFS, HMS just holds the metadata.
+# HMS talks to LakeFS via the S3A filesystem wired in hive-site.xml.
+
+print("Initializing LakeFS HMS schemas and tables...")
+
+# Poll until hive_lakefs catalog is visible in Trino
+for attempt in range(30):
+    try:
+        _conn = trino.dbapi.connect(host='trino', port=8082, user='admin')
+        _cur = _conn.cursor()
+        _cur.execute("SHOW CATALOGS")
+        catalogs = [row[0] for row in _cur.fetchall()]
+        _cur.close()
+        _conn.close()
+        if 'hive_lakefs' in catalogs:
+            print(f"[ok] hive_lakefs catalog visible after {attempt * 2}s")
+            break
+        print(f"  waiting for hive_lakefs catalog... ({attempt * 2}s)")
+    except Exception as e:
+        print(f"  Trino not ready: {e}")
+    time.sleep(2)
+else:
+    print("[warn] hive_lakefs catalog never appeared — LakeFS HMS init may fail")
+
+# Schema for main branch — location is the LakeFS S3A virtual path for main
+run_trino(
+    "CREATE SCHEMA IF NOT EXISTS hive_lakefs.lakefs_main "
+    "WITH (location = 's3a://quickstart/main/')",
+    "Schema hive_lakefs.lakefs_main"
+)
+
+# Schema for dev branch
+run_trino(
+    "CREATE SCHEMA IF NOT EXISTS hive_lakefs.lakefs_dev "
+    "WITH (location = 's3a://quickstart/dev/')",
+    "Schema hive_lakefs.lakefs_dev"
+)
+
+# External table on main branch — reads Parquet files from LakeFS main
+run_trino("""
+    CREATE TABLE IF NOT EXISTS hive_lakefs.lakefs_main.yellow_trips (
+        VendorID              integer,
+        tpep_pickup_datetime  timestamp(3),
+        tpep_dropoff_datetime timestamp(3),
+        passenger_count       bigint,
+        trip_distance         double,
+        RatecodeID            bigint,
+        store_and_fwd_flag    varchar,
+        PULocationID          integer,
+        DOLocationID          integer,
+        payment_type          bigint,
+        fare_amount           double,
+        extra                 double,
+        mta_tax               double,
+        tip_amount            double,
+        tolls_amount          double,
+        improvement_surcharge double,
+        total_amount          double,
+        congestion_surcharge  double,
+        Airport_fee           double
+    ) WITH (
+        external_location = 's3a://quickstart/main/data/',
+        format = 'PARQUET'
+    )
+""", "Table hive_lakefs.lakefs_main.yellow_trips")
+
+# External table on dev branch — same schema, empty until data is committed to dev
+run_trino("""
+    CREATE TABLE IF NOT EXISTS hive_lakefs.lakefs_dev.yellow_trips (
+        VendorID              integer,
+        tpep_pickup_datetime  timestamp(3),
+        tpep_dropoff_datetime timestamp(3),
+        passenger_count       bigint,
+        trip_distance         double,
+        RatecodeID            bigint,
+        store_and_fwd_flag    varchar,
+        PULocationID          integer,
+        DOLocationID          integer,
+        payment_type          bigint,
+        fare_amount           double,
+        extra                 double,
+        mta_tax               double,
+        tip_amount            double,
+        tolls_amount          double,
+        improvement_surcharge double,
+        total_amount          double,
+        congestion_surcharge  double,
+        Airport_fee           double
+    ) WITH (
+        external_location = 's3a://quickstart/dev/data/',
+        format = 'PARQUET'
+    )
+""", "Table hive_lakefs.lakefs_dev.yellow_trips")
+
+# Quick sanity check — main should have rows, dev should be 0
+try:
+    rows = trino_query("SELECT count(*) FROM hive_lakefs.lakefs_main.yellow_trips")
+    print(f"[ok] hive_lakefs.lakefs_main.yellow_trips — {rows[0][0]:,} rows")
+except Exception as e:
+    print(f"[warn] main row count check failed: {e}")
+
+try:
+    rows = trino_query("SELECT count(*) FROM hive_lakefs.lakefs_dev.yellow_trips")
+    print(f"[ok] hive_lakefs.lakefs_dev.yellow_trips — {rows[0][0]:,} rows (dev branch is isolated)")
+except Exception as e:
+    print(f"[warn] dev row count check failed: {e}")
+
+print("LakeFS HMS init complete.")
 print("Init complete.")

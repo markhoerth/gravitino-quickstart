@@ -46,6 +46,36 @@ services:
     networks:
       - gqsnet
 
+  # ─── LakeFS (Git for data, backed by MinIO) ───────────────────
+  lakefs:
+    image: treeverse/lakefs:latest
+    container_name: gqs-lakefs
+    command: run
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      - LAKEFS_BLOCKSTORE_TYPE=s3
+      - LAKEFS_BLOCKSTORE_S3_FORCE_PATH_STYLE=true
+      - LAKEFS_BLOCKSTORE_S3_ENDPOINT=http://gqs-minio:9000
+      - LAKEFS_BLOCKSTORE_S3_DISCOVER_BUCKET_REGION=false
+      - LAKEFS_BLOCKSTORE_S3_CREDENTIALS_ACCESS_KEY_ID=gravitino
+      - LAKEFS_BLOCKSTORE_S3_CREDENTIALS_SECRET_ACCESS_KEY=gravitino123
+      - LAKEFS_AUTH_ENCRYPT_SECRET_KEY=gravitino-quickstart-secret
+      - LAKEFS_INSTALLATION_USER_NAME=gravitino
+      - LAKEFS_INSTALLATION_ACCESS_KEY_ID=gravitino-lakefs-key
+      - LAKEFS_INSTALLATION_SECRET_ACCESS_KEY=gravitino-lakefs-secret
+      - LAKEFS_DATABASE_TYPE=local
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8000/api/v1/healthcheck || exit 1" ] 
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - gqsnet
 
   # ─── Gravitino Iceberg REST Catalog (standalone IRC) ──────────
   irc:
@@ -116,14 +146,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      lakefs: 
+        condition: service_healthy
     environment:
       SERVICE_NAME: metastore
+      DB_DRIVER: postgres
     ports:
       - "9083:9083"
     volumes:
       - hive_data:/data/hive
       - nyc_taxi_data:/data/nyc_taxi
-      - derby_data:/opt/hive/data
     networks:
       - gqsnet
 
@@ -218,6 +250,8 @@ services:
       minio:
         condition: service_healthy
       irc:
+        condition: service_healthy
+      lakefs: 
         condition: service_healthy
     volumes:
       - nyc_taxi_data:/data/nyc_taxi
