@@ -40,7 +40,7 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     }
 })
 
-# Iceberg catalog (NYC taxi via standalone Gravitino IRC + MinIO)
+# Iceberg catalog (NYC taxi via standalone Gravitino IRC)
 post(f"/api/metalakes/{METALAKE}/catalogs", {
     "name": "iceberg_nyc",
     "type": "RELATIONAL",
@@ -48,8 +48,7 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     "comment": "NYC taxi Iceberg catalog (MinIO-backed)",
     "properties": {
         "catalog-backend": "rest",
-        "uri": "http://irc:9001/iceberg",
-        "warehouse": "s3://iceberg/nyc_taxi"
+        "uri": "http://irc:9001/iceberg"
     }
 })
 

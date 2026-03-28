@@ -8,7 +8,3 @@ COPY initial-data-sources.conf /opt/cloudbeaver/conf/initial-data-sources.conf
 RUN sed -i 's|grantConnectionsAccessToAnonymousTeam.*|grantConnectionsAccessToAnonymousTeam: true,|' \
     /opt/cloudbeaver/conf/cloudbeaver.conf
 
-# Restore pre-configured workspace (includes working Trino connection)
-COPY workspace-backup.tar.gz /tmp/workspace-backup.tar.gz
-RUN tar -xzf /tmp/workspace-backup.tar.gz -C /opt/cloudbeaver && \
-    rm /tmp/workspace-backup.tar.gz

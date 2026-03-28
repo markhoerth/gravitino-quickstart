@@ -10,6 +10,19 @@ until curl -sf http://gravitino:8090/api/version > /dev/null; do
 done
 echo "Gravitino ready."
 
+# Wait for IRC and create Iceberg view_test namespace
+echo "Waiting for IRC..."
+until curl -sf http://irc:9001/iceberg/v1/config > /dev/null; do
+    sleep 2
+done
+echo "IRC ready."
+
+echo "Creating Iceberg view_test namespace..."
+curl -sf -X POST http://irc:9001/iceberg/v1/namespaces \
+  -H "Content-Type: application/json" \
+  -d '{"namespace": ["view_test"], "properties": {}}' || true
+echo "IRC view_test namespace ready."
+
 # Wait for LakeFS
 echo "Waiting for LakeFS..."
 until curl -sf http://gqs-lakefs:8000/api/v1/healthcheck > /dev/null 2>&1; do

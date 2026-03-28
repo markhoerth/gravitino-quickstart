@@ -84,16 +84,10 @@ services:
     environment:
       GRAVITINO_CATALOG_BACKEND: jdbc
       GRAVITINO_URI: jdbc:postgresql://postgres:5432/iceberg_catalog
-      GRAVITINO_WAREHOUSE: s3://iceberg/nyc_taxi
       GRAVITINO_JDBC_DRIVER: org.postgresql.Driver
       GRAVITINO_JDBC_USER: gravitino
       GRAVITINO_JDBC_PASSWORD: gravitino
-      GRAVITINO_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
-      AWS_ACCESS_KEY_ID: gravitino
-      AWS_SECRET_ACCESS_KEY: gravitino123
-      AWS_REGION: us-east-1
-      GRAVITINO_S3_ENDPOINT: http://minio:9000
-      GRAVITINO_S3_PATH_STYLE_ACCESS: "true"
+      GRAVITINO_WAREHOUSE: file:///tmp/iceberg-warehouse
     depends_on:
       postgres:
         condition: service_healthy
@@ -163,6 +157,10 @@ services:
   trino:
     build: ./trino
     container_name: gqs-trino
+    environment:
+      AWS_ACCESS_KEY_ID: gravitino
+      AWS_SECRET_ACCESS_KEY: gravitino123
+      AWS_REGION: us-east-1
     depends_on:
       gravitino:
         condition: service_healthy
@@ -256,6 +254,29 @@ services:
     volumes:
       - nyc_taxi_data:/data/nyc_taxi
       - hive_data:/data/hive
+    networks:
+      - gqsnet
+
+  spark-sql:
+    image: apache/spark:3.5.5
+    container_name: gqs-spark-sql
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo 'Downloading PostgreSQL JDBC driver...' &&
+        curl -fsSL -o /opt/spark/jars/postgresql.jar \
+          https://jdbc.postgresql.org/download/postgresql-42.7.3.jar &&
+        echo 'Starting Spark SQL shell...' &&
+        /opt/spark/bin/spark-sql \
+          --master local[*] \
+          --driver-class-path /opt/spark/jars/postgresql.jar \
+          --conf spark.executor.extraClassPath=/opt/spark/jars/postgresql.jar
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./spark_test_queries.sql:/home/spark_test_queries.sql:ro
+    depends_on:
+      - postgres
     networks:
       - gqsnet
 
