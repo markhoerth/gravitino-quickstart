@@ -51,3 +51,37 @@ Trino: username `admin`, no password
 - First startup downloads 3 months of NYC taxi data (~150MB)
 - HMS uses Derby (embedded) for metastore — data persists in Docker volumes
 - WSL2 users: all services communicate via the `gqsnet` Docker network
+
+## Natural Language Queries with Claude (MCP)
+
+Query your data lake using plain English via Claude and MCP.
+
+### Prerequisites
+
+1. Datastrato MCP server cloned and configured at `~/git/mcp-server-gravitino`
+2. Trino MCP server installed (`mcp-trino` in PATH)
+3. App venv set up in `mcp/app/.venv`
+
+### Start
+
+Open three terminals:
+
+**Terminal 1 — Gravitino MCP server:**
+    ./mcp/start-gravitino-mcp.sh
+
+**Terminal 2 — Trino MCP server:**
+    ./mcp/start-trino-mcp.sh
+
+**Terminal 3 — App:**
+    export ANTHROPIC_API_KEY=sk-ant-...
+    ./mcp/start-app.sh
+
+### Try it
+
+    What catalogs are available?
+    What tables are in the iceberg_nyc catalog?
+    What were the top 5 busiest pickup locations by number of trips?
+    How many orders are in the tpch catalog and what is the average order value?
+
+
+
