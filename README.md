@@ -60,11 +60,12 @@ Query your data lake using plain English via Claude and MCP.
 
 1. Datastrato MCP server cloned and configured at `~/git/mcp-server-gravitino`
 2. Trino MCP server installed (`mcp-trino` in PATH)
-3. App venv set up in `mcp/app/.venv`
+3. MetricFlow MCP server at `~/gravitino-semantic-layer/quickstart/`
+4. App venv set up in `mcp/app/.venv`
 
 ### Start
 
-Open three terminals:
+Open four terminals:
 
 **Terminal 1 — Gravitino MCP server:**
     ./mcp/start-gravitino-mcp.sh
@@ -72,7 +73,10 @@ Open three terminals:
 **Terminal 2 — Trino MCP server:**
     ./mcp/start-trino-mcp.sh
 
-**Terminal 3 — App:**
+**Terminal 3 - MetricFlow MCP server:**
+    cd ~/gravitino-semantic-layer-quickstart && ./start-metricflow-mcp.sh
+
+**Terminal 4 — App:**
     export ANTHROPIC_API_KEY=sk-ant-...
     ./mcp/start-app.sh
 
@@ -80,8 +84,8 @@ Open three terminals:
 
     What catalogs are available?
     What tables are in the iceberg_nyc catalog?
+    What governed metrics are available?
+    What's the average fare by vendor?
     What were the top 5 busiest pickup locations by number of trips?
     How many orders are in the tpch catalog and what is the average order value?
-
-
 
