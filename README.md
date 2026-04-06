@@ -9,7 +9,6 @@ One-command Gravitino data platform for POCs and developer evaluation.
 | Gravitino | http://localhost:8090 | Metadata catalog + governance (V2 UI) |
 | Trino | http://localhost:8082 | SQL query engine |
 | CloudBeaver | http://localhost:8978 | Web SQL IDE |
-| Airflow | http://localhost:8083 | Pipeline orchestration |
 
 ## Quickstart
 ```bash
