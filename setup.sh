@@ -76,3 +76,4 @@ echo "Setup complete. Run the following to start the stack:"
 echo ""
 echo "  docker-compose up -d"
 echo ""
+
