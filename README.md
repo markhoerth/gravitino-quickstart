@@ -34,7 +34,7 @@ SELECT avg(total_amount), avg(trip_distance) FROM hive_nyc.nyc_taxi.yellow_trips
 
 | Catalog | Type | Data |
 |---------|------|------|
-| postgres_demo | PostgreSQL | ADP financial services demo |
+| postgres_demo | PostgreSQL | Financial services demo |
 | hive_nyc | Hive | NYC Yellow Taxi 2024 (9.5M rows, 3 months) |
 | iceberg_nyc | Iceberg | NYC taxi Iceberg catalog |
 | fileset_nyc | Fileset | NYC taxi file governance |
