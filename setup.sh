@@ -1,6 +1,6 @@
 #!/bin/bash
 # Gravitino Quickstart Setup
-# Run this once before docker-compose up -d
+# Run this once before docker compose up -d
 
 set -e
 
@@ -15,7 +15,7 @@ if [ -f .env ]; then
     echo "An existing .env file was found."
     read -p "Reconfigure? [y/N]: " reconfigure
     if [[ ! "$reconfigure" =~ ^[Yy]$ ]]; then
-        echo "Using existing .env. Run 'docker-compose up -d' to start."
+        echo "Using existing .env. Run 'docker compose up -d' to start."
         exit 0
     fi
 fi
@@ -74,6 +74,6 @@ fi
 echo ""
 echo "Setup complete. Run the following to start the stack:"
 echo ""
-echo "  docker-compose up -d"
+echo "  docker compose up -d"
 echo ""
 
