@@ -18,6 +18,6 @@ fi
 
 # Build and start
 echo "Building images..."
-docker-compose build
+docker compose build
 
-echo "=== Build complete. Run 'docker-compose up -d' to start ==="
+echo "=== Build complete. Run 'docker compose up -d' to start ==="
