@@ -258,25 +258,18 @@ services:
       - gqsnet
 
   spark-sql:
-    image: apache/spark:3.5.5
+    build: ./spark-sql
     container_name: gqs-spark-sql
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      - |
-        echo 'Downloading PostgreSQL JDBC driver...' &&
-        curl -fsSL -o /opt/spark/jars/postgresql.jar \
-          https://jdbc.postgresql.org/download/postgresql-42.7.3.jar &&
-        echo 'Starting Spark SQL shell...' &&
-        /opt/spark/bin/spark-sql \
-          --master local[*] \
-          --driver-class-path /opt/spark/jars/postgresql.jar \
-          --conf spark.executor.extraClassPath=/opt/spark/jars/postgresql.jar
+    entrypoint: ["/opt/spark/bin/start-spark-sql.sh"]
     stdin_open: true
     tty: true
     volumes:
       - ./spark_test_queries.sql:/home/spark_test_queries.sql:ro
     depends_on:
-      - postgres
+      gravitino:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
     networks:
       - gqsnet
 
