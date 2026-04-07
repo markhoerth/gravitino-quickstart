@@ -29,6 +29,14 @@ up-quick:
 	$(COMPOSE) up -d
 	@echo "Started without volume reset — use 'make up' for a clean start."
 
+## Wait for init container to complete before connecting
+wait-for-init:
+	@echo "Waiting for init to complete..."
+	@until docker logs gqs-init 2>&1 | grep -q "=== Init complete ==="; do \
+		sleep 2; \
+	done
+	@echo "Init complete."
+
 ## Rebuild all custom images (run after any Dockerfile or init script changes)
 build:
 	./build.sh
@@ -59,11 +67,11 @@ ps:
 # -------------------------------------------------------
 
 ## Launch Spark SQL shell (connects through Gravitino postgres_demo catalog)
-spark-sql:
+spark-sql: wait-for-init
 	$(COMPOSE) run --rm spark-sql
 
 ## Launch Trino CLI (connects through Gravitino catalog)
-trino-sql:
+trino-sql: wait-for-init
 	docker exec -it gqs-trino \
 	  trino --server http://localhost:8082 \
 	        --user admin
