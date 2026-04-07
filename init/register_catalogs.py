@@ -48,7 +48,12 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
     "comment": "NYC taxi Iceberg catalog (MinIO-backed)",
     "properties": {
         "catalog-backend": "rest",
-        "uri": "http://irc:9001/iceberg"
+        "uri": "http://irc:9001/iceberg",
+        "trino.bypass.hive.s3.aws-access-key": "gravitino",
+        "trino.bypass.hive.s3.aws-secret-key": "gravitino123",
+        "trino.bypass.hive.s3.endpoint": "http://gqs-minio:9000",
+        "trino.bypass.hive.s3.path-style-access": "true",
+        "trino.bypass.hive.s3.region": "us-east-1"
     }
 })
 

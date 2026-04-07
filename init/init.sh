@@ -38,6 +38,16 @@ aws --endpoint-url http://gqs-minio:9000 \
     s3 mb s3://lakefs --region us-east-1 2>/dev/null || true
 echo "LakeFS bucket ready."
 
+# Create MinIO bucket for Iceberg storage
+echo "Creating Iceberg storage bucket..."
+AWS_ACCESS_KEY_ID=gravitino \
+AWS_SECRET_ACCESS_KEY=gravitino123 \
+aws --endpoint-url http://gqs-minio:9000 \
+    s3 mb s3://iceberg \
+    --region us-east-1 \
+    || true
+echo "Iceberg bucket ready."
+
 # Setup LakeFS first user
 echo "Setting up LakeFS..."
 curl -sf -X POST http://gqs-lakefs:8000/api/v1/setup_lakefs \
