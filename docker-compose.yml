@@ -274,8 +274,6 @@ services:
     depends_on:
       gravitino:
         condition: service_healthy
-      init:
-        condition: service_completed_successfully
     networks:
       - gqsnet
 

@@ -29,6 +29,11 @@ up-quick:
 	$(COMPOSE) up -d
 	@echo "Started without volume reset — use 'make up' for a clean start."
 
+## Rebuild all custom images (run after any Dockerfile or init script changes)
+build:
+	./build.sh
+	$(COMPOSE) build --no-cache irc gravitino init trino spark-sql
+
 ## Stop all containers
 down:
 	$(COMPOSE) down
