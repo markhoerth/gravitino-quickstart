@@ -246,6 +246,11 @@ services:
   init:
     build: ./init
     container_name: gqs-init
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      GLUE_WAREHOUSE: ${GLUE_WAREHOUSE}
     depends_on:
       gravitino:
         condition: service_healthy
@@ -274,6 +279,10 @@ services:
     depends_on:
       gravitino:
         condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: gravitino
+      AWS_SECRET_ACCESS_KEY: gravitino123
+      AWS_REGION: us-east-1
     networks:
       - gqsnet
 

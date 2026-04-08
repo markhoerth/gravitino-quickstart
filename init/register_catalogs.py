@@ -69,3 +69,18 @@ post(f"/api/metalakes/{METALAKE}/catalogs", {
 })
 
 print("Catalog registration complete.")
+
+
+# AWS Glue catalog (Dell demo)
+import os
+post(f"/api/metalakes/{METALAKE}/catalogs", {
+    "name": "glue_demo",
+    "type": "RELATIONAL",
+    "provider": "glue",
+    "comment": "AWS Glue Data Catalog",
+    "properties": {
+        "aws-region": os.environ.get("AWS_REGION", "us-east-1"),
+        "aws-access-key-id": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+        "aws-secret-access-key": os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+    }
+})

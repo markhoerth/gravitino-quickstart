@@ -4,3 +4,4 @@ trino/gravitino-connector/
 # Python cache
 __pycache__/
 *.pyc
+.env

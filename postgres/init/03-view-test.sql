@@ -14,14 +14,14 @@ GRANT ALL ON SCHEMA sales TO gravitino;
 -- -------------------------------------------------------
 
 CREATE TABLE sales.customers (
-    customer_id   SERIAL PRIMARY KEY,
+    customer_id   INTEGER PRIMARY KEY,
     name          TEXT    NOT NULL,
     region        TEXT    NOT NULL,
     tier          TEXT    NOT NULL DEFAULT 'standard'
 );
 
 CREATE TABLE sales.products (
-    product_id    SERIAL PRIMARY KEY,
+    product_id    INTEGER PRIMARY KEY,
     sku           TEXT    NOT NULL UNIQUE,
     product_name  TEXT    NOT NULL,
     category      TEXT    NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE sales.products (
 );
 
 CREATE TABLE sales.orders (
-    order_id      SERIAL PRIMARY KEY,
+    order_id      INTEGER PRIMARY KEY,
     customer_id   INT     NOT NULL REFERENCES sales.customers(customer_id),
     product_id    INT     NOT NULL REFERENCES sales.products(product_id),
     quantity      INT     NOT NULL,
