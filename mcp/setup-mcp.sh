@@ -3,7 +3,9 @@
 # Installs prerequisites for the Gravitino Quickstart MCP stack:
 #   - uv (Python package manager)
 #   - mcp-trino binary (tuannvm/mcp-trino)
-#   - Gravitino MCP server Python venv
+#
+# Gravitino MCP server runs as a Docker service (gqs-gravitino-mcp) —
+# no additional setup needed for it.
 #
 # Run once after cloning the repo.
 
@@ -38,28 +40,6 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
     echo "  NOTE: Add $INSTALL_DIR to your PATH:"
     echo "    echo 'export PATH=\$HOME/.local/bin:\$PATH' >> ~/.bashrc && source ~/.bashrc"
     echo ""
-fi
-
-# ── Gravitino MCP server venv ────────────────────────────────────────────────
-GRAVITINO_MCP_DIR="$HOME/git/mcp-server-gravitino"
-if [ ! -d "$GRAVITINO_MCP_DIR" ]; then
-    echo ""
-    echo "  NOTE: Gravitino MCP server not found at $GRAVITINO_MCP_DIR"
-    echo "  Clone it with:"
-    echo "    git clone https://github.com/datastrato/mcp-server-gravitino ~/git/mcp-server-gravitino"
-    echo "  Then re-run this script."
-    echo ""
-else
-    if [ ! -f "$GRAVITINO_MCP_DIR/.venv/bin/python" ] || \
-       ! "$GRAVITINO_MCP_DIR/.venv/bin/python" -c "import mcp_server_gravitino" 2>/dev/null; then
-        echo "Setting up Gravitino MCP server venv..."
-        cd "$GRAVITINO_MCP_DIR"
-        uv venv .venv
-        uv pip install -r requirements.txt --python .venv/bin/python
-        echo "[ok] Gravitino MCP server venv ready"
-    else
-        echo "[skip] Gravitino MCP server venv already exists"
-    fi
 fi
 
 echo ""

@@ -1,12 +1,13 @@
 #!/bin/bash
-cd ~/git/mcp-server-gravitino
-source .venv/bin/activate
+# start-gravitino-mcp.sh
+# NOTE: The Gravitino MCP server now runs automatically as a Docker service
+# (gqs-gravitino-mcp) when you run `make up`. It is available at:
+#   http://localhost:8001/mcp
+#
+# This script is no longer needed for normal use.
+# It is kept for reference only.
 
-GRAVITINO_URI=http://localhost:8090 \
-GRAVITINO_METALAKE=metalake_demo \
-GRAVITINO_USERNAME=admin \
-GRAVITINO_PASSWORD=admin \
-GRAVITINO_ACTIVE_TOOLS=get_list_of_catalogs,get_list_of_schemas,get_list_of_tables,get_table_by_fqn,get_table_columns_by_fqn \
-GRAVITINO_TRANSPORT=http \
-GRAVITINO_MCP_PORT=8001 \
-python -m mcp_server_gravitino.server
+echo "Gravitino MCP server runs automatically via Docker (gqs-gravitino-mcp)."
+echo "It should already be available at http://localhost:8001/mcp"
+echo ""
+echo "Check its status with:  docker logs gqs-gravitino-mcp"
