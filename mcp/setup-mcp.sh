@@ -9,34 +9,16 @@
 
 set -e
 
-MCP_TRINO_VERSION="4.3.1"
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
-
-# ── Detect platform ──────────────────────────────────────────────────────────
-OS=$(uname -s)
-ARCH=$(uname -m)
-
-case "$OS/$ARCH" in
-    Linux/x86_64)   PLATFORM="Linux_x86_64" ;;
-    Linux/aarch64)  PLATFORM="Linux_arm64" ;;
-    Darwin/arm64)   PLATFORM="Darwin_arm64" ;;
-    Darwin/x86_64)  PLATFORM="Darwin_x86_64" ;;
-    *)
-        echo "Unsupported platform: $OS/$ARCH"
-        exit 1
-        ;;
-esac
 
 # ── mcp-trino binary ─────────────────────────────────────────────────────────
 if command -v mcp-trino > /dev/null 2>&1; then
     echo "[skip] mcp-trino already installed at $(which mcp-trino)"
 else
-    echo "Installing mcp-trino v${MCP_TRINO_VERSION} for ${PLATFORM}..."
-    URL="https://github.com/tuannvm/mcp-trino/releases/download/v${MCP_TRINO_VERSION}/mcp-trino_${PLATFORM}.tar.gz"
-    curl -fsSL "$URL" | tar xz -C "$INSTALL_DIR" mcp-trino
-    chmod +x "$INSTALL_DIR/mcp-trino"
-    echo "[ok] mcp-trino installed to $INSTALL_DIR/mcp-trino"
+    echo "Installing mcp-trino..."
+    curl -fsSL https://raw.githubusercontent.com/tuannvm/mcp-trino/main/install.sh | bash
+    echo "[ok] mcp-trino installed"
 fi
 
 # Ensure ~/.local/bin is in PATH
