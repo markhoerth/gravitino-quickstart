@@ -1,9 +1,9 @@
 #!/bin/bash
 # setup-mcp.sh
 # Installs prerequisites for the Gravitino Quickstart MCP stack:
-#   - mcp-trino binary (tuannvm/mcp-trino v4.3.1)
+#   - uv (Python package manager)
+#   - mcp-trino binary (tuannvm/mcp-trino)
 #   - Gravitino MCP server Python venv
-#   - App Python venv
 #
 # Run once after cloning the repo.
 
@@ -11,6 +11,17 @@ set -e
 
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
+
+# ── uv ───────────────────────────────────────────────────────────────────────
+if command -v uv > /dev/null 2>&1; then
+    echo "[skip] uv already installed at $(which uv)"
+else
+    echo "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # uv installs to ~/.local/bin — source env to pick it up immediately
+    source "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"
+    echo "[ok] uv installed"
+fi
 
 # ── mcp-trino binary ─────────────────────────────────────────────────────────
 if command -v mcp-trino > /dev/null 2>&1; then
@@ -39,31 +50,16 @@ if [ ! -d "$GRAVITINO_MCP_DIR" ]; then
     echo "  Then re-run this script."
     echo ""
 else
-    if [ ! -d "$GRAVITINO_MCP_DIR/.venv" ]; then
+    if [ ! -f "$GRAVITINO_MCP_DIR/.venv/bin/python" ] || \
+       ! "$GRAVITINO_MCP_DIR/.venv/bin/python" -c "import mcp_server_gravitino" 2>/dev/null; then
         echo "Setting up Gravitino MCP server venv..."
         cd "$GRAVITINO_MCP_DIR"
-        python3 -m venv .venv
-        source .venv/bin/activate
-        pip install -q -r requirements.txt
-        deactivate
+        uv venv .venv
+        uv pip install -r requirements.txt --python .venv/bin/python
         echo "[ok] Gravitino MCP server venv ready"
     else
         echo "[skip] Gravitino MCP server venv already exists"
     fi
-fi
-
-# ── App venv ─────────────────────────────────────────────────────────────────
-APP_DIR="$(dirname "$0")/app"
-if [ ! -d "$APP_DIR/.venv" ]; then
-    echo "Setting up app venv..."
-    cd "$APP_DIR"
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -q -r requirements.txt
-    deactivate
-    echo "[ok] App venv ready"
-else
-    echo "[skip] App venv already exists"
 fi
 
 echo ""
