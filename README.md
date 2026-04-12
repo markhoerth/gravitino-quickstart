@@ -130,32 +130,28 @@ make reset       # clean + prune dangling images
 
 Query your data using plain English via Claude and MCP. Two independent modes are available — set up only the one you need.
 
-| Mode | What it does | MCP servers |
-|------|-------------|-------------|
-| `sql` | NL → Claude → SQL → Trino → Gravitino | Gravitino MCP + Trino MCP |
-| `metricflow` | NL → Claude → MetricFlow → Gravitino | Gravitino MCP + Trino MCP + MetricFlow MCP |
+| Mode | What it does | Additional servers needed |
+|------|-------------|--------------------------|
+| `sql` | NL → Claude → SQL → Trino → Gravitino | Trino MCP only |
+| `metricflow` | NL → Claude → MetricFlow → Gravitino | Trino MCP + MetricFlow MCP |
+
+The Gravitino MCP server runs automatically as part of the Docker stack (`gqs-gravitino-mcp`) on port 8001 — no setup needed for it.
+
+---
 
 ### One-time setup
 
-Run this once after cloning to install the `mcp-trino` binary and set up Python venvs:
+Run this once after cloning to install `uv` and the `mcp-trino` binary:
 
 ```bash
 ./mcp/setup-mcp.sh
 ```
 
-This installs `mcp-trino` v4.3.1 (tuannvm/mcp-trino) to `~/.local/bin` and sets up the app venv. Make sure `~/.local/bin` is in your PATH:
+Make sure `~/.local/bin` is in your PATH:
 
 ```bash
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc && source ~/.bashrc
 ```
-
-The Gravitino MCP server must be cloned separately:
-
-```bash
-git clone https://github.com/datastrato/mcp-server-gravitino ~/git/mcp-server-gravitino
-```
-
-Then re-run `./mcp/setup-mcp.sh` to set up its venv.
 
 For `metricflow` mode, also clone:
 
@@ -167,7 +163,7 @@ git clone https://github.com/markhoerth/gravitino-semantic-layer-quickstart ~/gr
 
 ### SQL mode
 
-Start MCP servers in the background (no extra terminals needed):
+Start the Trino MCP server in the background:
 
 ```bash
 ./mcp/start-mcp-sql.sh
@@ -217,4 +213,8 @@ What is the average fare across all trips?
 ./mcp/stop-mcp.sh
 ```
 
-Logs for all MCP servers are written to `mcp/logs/`.
+Trino MCP logs are written to `mcp/logs/`. For Gravitino MCP logs:
+
+```bash
+make logs-svc SVC=gravitino-mcp
+```
