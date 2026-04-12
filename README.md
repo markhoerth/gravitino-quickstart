@@ -48,7 +48,7 @@ SHOW CATALOGS;
 SELECT count(*) FROM postgres_demo.public.customers;
 SELECT * FROM postgres_demo.public.transactions WHERE flagged_for_review = true;
 
--- Hive (NYC taxi — Parquet, direct)
+-- Hive (NYC taxi — Parquet)
 SELECT count(*) FROM hive_nyc.nyc_taxi.yellow_trips;
 SELECT avg(total_amount), avg(trip_distance) FROM hive_nyc.nyc_taxi.yellow_trips;
 
@@ -58,7 +58,7 @@ SELECT payment_type, count(*), avg(total_amount)
 FROM iceberg_nyc.nyc_taxi.yellow_trips
 GROUP BY payment_type ORDER BY 2 DESC;
 
--- LakeFS branching demo (same data, isolated branches)
+-- LakeFS branching demo
 SELECT count(*) FROM hive_lakefs.lakefs_main.yellow_trips;
 SELECT count(*) FROM hive_lakefs.lakefs_dev.yellow_trips;
 ```
@@ -74,9 +74,7 @@ make spark-sql
 USE iceberg_nyc.nyc_taxi;
 SHOW TABLES;
 SELECT COUNT(*) FROM yellow_trips;
-SELECT VendorID, COUNT(*), AVG(total_amount)
-FROM yellow_trips
-GROUP BY VendorID;
+SELECT VendorID, COUNT(*), AVG(total_amount) FROM yellow_trips GROUP BY VendorID;
 
 -- PostgreSQL via Gravitino
 SELECT * FROM postgres_demo.public.customers;
@@ -121,7 +119,7 @@ make reset       # clean + prune dangling images
 ## Notes
 
 - First startup downloads 3 months of NYC taxi data (~150MB) and loads them into Iceberg (~5 min total)
-- Iceberg data is stored in MinIO — if you run `make clean` or remove volumes, the Iceberg table will be reloaded automatically on next `make up`
+- Iceberg data is stored in MinIO — if you run `make clean`, the Iceberg table reloads automatically on next `make up`
 - HMS uses Derby (embedded) for metastore — metadata persists in Docker volumes
 - WSL2 users: all services communicate via the `gqsnet` Docker network
 - AWS Glue catalog requires `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `GLUE_WAREHOUSE` environment variables
@@ -130,51 +128,59 @@ make reset       # clean + prune dangling images
 
 ## Natural Language Queries with Claude (MCP)
 
-Query your data using plain English via Claude and MCP. Two modes are available:
+Query your data using plain English via Claude and MCP. Two independent modes are available — set up only the one you need.
 
-| Mode | Description |
-|------|-------------|
-| `sql` | NL → LLM → SQL → Trino → Gravitino. Claude generates SQL, Trino executes it against Gravitino-federated catalogs. |
-| `metricflow` | NL → LLM → MetricFlow → Gravitino MCP. Semantic layer approach using governed metrics. |
+| Mode | What it does | MCP servers |
+|------|-------------|-------------|
+| `sql` | NL → Claude → SQL → Trino → Gravitino | Gravitino MCP + Trino MCP |
+| `metricflow` | NL → Claude → MetricFlow → Gravitino | Gravitino MCP + Trino MCP + MetricFlow MCP |
 
-### Prerequisites
+### One-time setup
 
-1. **Gravitino MCP server** cloned and configured at `~/git/mcp-server-gravitino`
-2. **Trino MCP server** installed (`mcp-trino` in PATH)
-3. **MetricFlow MCP server** at `~/gravitino-semantic-layer-quickstart/` with `start-metricflow-mcp.sh`
-4. **App venv** set up in `mcp/app/.venv`:
-   ```bash
-   cd mcp/app
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+Run this once after cloning to install the `mcp-trino` binary and set up Python venvs:
 
-### Start (four terminals)
-
-**Terminal 1 — Gravitino MCP server:**
 ```bash
-./mcp/start-gravitino-mcp.sh
+./mcp/setup-mcp.sh
 ```
 
-**Terminal 2 — Trino MCP server:**
+This installs `mcp-trino` v4.3.1 (tuannvm/mcp-trino) to `~/.local/bin` and sets up the app venv. Make sure `~/.local/bin` is in your PATH:
+
 ```bash
-./mcp/start-trino-mcp.sh
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc && source ~/.bashrc
 ```
 
-**Terminal 3 — MetricFlow MCP server** *(required for `metricflow` mode only):*
+The Gravitino MCP server must be cloned separately:
+
 ```bash
-cd ~/gravitino-semantic-layer-quickstart && ./start-metricflow-mcp.sh
+git clone https://github.com/datastrato/mcp-server-gravitino ~/git/mcp-server-gravitino
 ```
 
-**Terminal 4 — App:**
+Then re-run `./mcp/setup-mcp.sh` to set up its venv.
+
+For `metricflow` mode, also clone:
+
+```bash
+git clone https://github.com/markhoerth/gravitino-semantic-layer-quickstart ~/gravitino-semantic-layer-quickstart
+```
+
+---
+
+### SQL mode
+
+Start MCP servers in the background (no extra terminals needed):
+
+```bash
+./mcp/start-mcp-sql.sh
+```
+
+Start the app:
+
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-./mcp/start-app.sh sql          # SQL generation mode
-./mcp/start-app.sh metricflow   # Semantic layer mode
+./mcp/start-app.sh sql
 ```
 
-### Try it — SQL mode
+Try it:
 
 ```
 What catalogs are available in Gravitino?
@@ -182,12 +188,33 @@ What tables are in the iceberg_nyc catalog?
 What's the average fare and trip distance by vendor?
 What were the top 5 busiest pickup locations by number of trips?
 Show me all flagged transactions for high-risk customers.
+How many trips had a fare above $50?
 ```
 
-### Try it — MetricFlow mode
+---
+
+### MetricFlow mode
+
+```bash
+./mcp/start-mcp-metricflow.sh
+export ANTHROPIC_API_KEY=sk-ant-...
+./mcp/start-app.sh metricflow
+```
+
+Try it:
 
 ```
 What governed metrics are available?
-What's the total revenue by region this quarter?
-Show me transaction volume by customer risk rating.
+What's the total number of trips by vendor?
+What is the average fare across all trips?
 ```
+
+---
+
+### Stop MCP servers
+
+```bash
+./mcp/stop-mcp.sh
+```
+
+Logs for all MCP servers are written to `mcp/logs/`.
