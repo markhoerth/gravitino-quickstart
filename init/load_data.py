@@ -26,7 +26,7 @@ cur.execute("""
     )
 """)
 
-# Create transactions table  
+# Create transactions table
 cur.execute("""
     CREATE TABLE IF NOT EXISTS transactions (
         transaction_id      TEXT PRIMARY KEY,
@@ -113,13 +113,12 @@ if cur.fetchone()[0] == 0:
         ('TXN-0039', 'ACC-1007', 'Amara Diallo',  '2025-10-28 15:30:00-04', 430.20,   'BILL_PAYMENT',    'COMPLETED',  False),
         ('TXN-0040', 'ACC-1007', 'Amara Diallo',  '2025-11-18 10:45:00-04', 960.00,   'WIRE_TRANSFER',   'COMPLETED',  False),
         ('TXN-0041', 'ACC-1007', 'Amara Diallo',  '2025-12-08 14:20:00-04', 115.75,   'PURCHASE',        'COMPLETED',  False),
-        ('TXN-0042', 'ACC-1007', 'Amara Diallo',  '2026-01-27 09:50:00-04', 2800.00,  'DEPOSIT',         'COMPLETED',  False),
+        ('TXN-0042', 'ACC-1007', 'Amara Diallo',  '2026-01-27 09:50:00-04', 1800.00,  'DEPOSIT',         'COMPLETED',  False),
         ('TXN-0043', 'ACC-1007', 'Amara Diallo',  '2026-02-12 13:00:00-04', 380.00,   'BILL_PAYMENT',    'COMPLETED',  False),
         # Robert Kowalski (ACC-1008, LOW risk, WESTERN, CLOSED)
         ('TXN-0044', 'ACC-1008', 'Robert Kowalski', '2025-10-01 10:00:00-07', 200.00,  'WITHDRAWAL',     'COMPLETED',  False),
         ('TXN-0045', 'ACC-1008', 'Robert Kowalski', '2025-10-01 10:05:00-07', 1840.55, 'WITHDRAWAL',     'COMPLETED',  False),
         ('TXN-0046', 'ACC-1008', 'Robert Kowalski', '2025-10-02 09:00:00-07', 12500.00,'WIRE_TRANSFER',  'COMPLETED',  False),
-        # Account closed after above — subsequent attempts declined
         ('TXN-0047', 'ACC-1008', 'Robert Kowalski', '2025-11-15 11:30:00-07', 500.00,  'PURCHASE',       'DECLINED',   False),
         # Fatima Al-Hassan (ACC-1009, HIGH risk, QUEBEC, ACTIVE)
         ('TXN-0048', 'ACC-1009', 'Fatima Al-Hassan', '2025-10-05 09:30:00-04', 32000.00, 'WIRE_TRANSFER','UNDER_REVIEW', True),
@@ -205,7 +204,7 @@ def run_trino(sql, description):
     cur = conn.cursor()
     try:
         cur.execute(sql)
-        cur.fetchall()  # consume result
+        cur.fetchall()
         print(f"[ok] {description}")
     except Exception as e:
         if 'already exists' in str(e).lower():
@@ -251,8 +250,22 @@ run_trino("""
 
 print("Hive init complete.")
 
-# Initialize Iceberg table via Trino → Gravitino REST server → MinIO
+# Initialize Iceberg table via Trino → Gravitino → IRC → MinIO
 print("Initializing Iceberg NYC taxi schema and table...")
+
+# Always clean up via IRC REST API first — bypasses Gravitino's load-before-drop
+# which fails if metadata files are missing from MinIO (e.g. after volume wipe).
+# 404 is fine — means the table doesn't exist yet.
+print("Cleaning up any stale Iceberg table registration via IRC...")
+r = requests.delete(
+    "http://irc:9001/iceberg/v1/namespaces/nyc_taxi/tables/yellow_trips"
+)
+if r.status_code == 200:
+    print("[ok] Dropped stale yellow_trips registration from IRC")
+elif r.status_code == 404:
+    print("[ok] No existing yellow_trips registration — clean slate")
+else:
+    print(f"[warn] IRC DELETE returned {r.status_code}: {r.text}")
 
 run_trino(
     "CREATE SCHEMA IF NOT EXISTS iceberg_nyc.nyc_taxi",
@@ -283,44 +296,18 @@ run_trino("""
     )
 """, "Iceberg table iceberg_nyc.nyc_taxi.yellow_trips")
 
-# Check if already populated
-def trino_query(sql):
-    conn = trino.dbapi.connect(host='trino', port=8082, user='admin')
-    cur = conn.cursor()
-    cur.execute(sql)
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
-
-try:
-    rows = trino_query("SELECT count(*) FROM iceberg_nyc.nyc_taxi.yellow_trips")
-    count = rows[0][0]
-    if count > 0:
-        print(f"[skip] Iceberg table already populated ({count:,} rows)")
-    else:
-        print("Loading Iceberg table via INSERT INTO ... SELECT (9.5M rows, ~3-5 min)...")
-        run_trino(
-            "INSERT INTO iceberg_nyc.nyc_taxi.yellow_trips "
-            "SELECT * FROM hive_nyc.nyc_taxi.yellow_trips",
-            "Iceberg INSERT iceberg_nyc.nyc_taxi.yellow_trips"
-        )
-except Exception as e:
-    print(f"[warn] Iceberg load check failed: {e}")
+print("Loading Iceberg table via INSERT INTO ... SELECT (~9.5M rows, 3-5 min)...")
+run_trino(
+    "INSERT INTO iceberg_nyc.nyc_taxi.yellow_trips "
+    "SELECT * FROM hive_nyc.nyc_taxi.yellow_trips",
+    "Iceberg INSERT iceberg_nyc.nyc_taxi.yellow_trips"
+)
 
 print("Iceberg init complete.")
 
 # ── LakeFS HMS: create schemas and external tables per branch ─────────────────
-# The hive_lakefs catalog federates two HMS schemas:
-#   lakefs_main  →  s3a://quickstart/main/data/   (production snapshot)
-#   lakefs_dev   →  s3a://quickstart/dev/data/    (isolated dev branch)
-#
-# Tables are EXTERNAL — the data lives in LakeFS, HMS just holds the metadata.
-# HMS talks to LakeFS via the S3A filesystem wired in hive-site.xml.
-
 print("Initializing LakeFS HMS schemas and tables...")
 
-# Poll until hive_lakefs catalog is visible in Trino
 for attempt in range(30):
     try:
         _conn = trino.dbapi.connect(host='trino', port=8082, user='admin')
@@ -339,21 +326,18 @@ for attempt in range(30):
 else:
     print("[warn] hive_lakefs catalog never appeared — LakeFS HMS init may fail")
 
-# Schema for main branch — location is the LakeFS S3A virtual path for main
 run_trino(
     "CREATE SCHEMA IF NOT EXISTS hive_lakefs.lakefs_main "
     "WITH (location = 's3a://quickstart/main/')",
     "Schema hive_lakefs.lakefs_main"
 )
 
-# Schema for dev branch
 run_trino(
     "CREATE SCHEMA IF NOT EXISTS hive_lakefs.lakefs_dev "
     "WITH (location = 's3a://quickstart/dev/')",
     "Schema hive_lakefs.lakefs_dev"
 )
 
-# External table on main branch — reads Parquet files from LakeFS main
 run_trino("""
     CREATE TABLE IF NOT EXISTS hive_lakefs.lakefs_main.yellow_trips (
         VendorID              integer,
@@ -381,7 +365,6 @@ run_trino("""
     )
 """, "Table hive_lakefs.lakefs_main.yellow_trips")
 
-# External table on dev branch — same schema, empty until data is committed to dev
 run_trino("""
     CREATE TABLE IF NOT EXISTS hive_lakefs.lakefs_dev.yellow_trips (
         VendorID              integer,
@@ -409,7 +392,15 @@ run_trino("""
     )
 """, "Table hive_lakefs.lakefs_dev.yellow_trips")
 
-# Quick sanity check — main should have rows, dev should be 0
+def trino_query(sql):
+    conn = trino.dbapi.connect(host='trino', port=8082, user='admin')
+    cur = conn.cursor()
+    cur.execute(sql)
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
 try:
     rows = trino_query("SELECT count(*) FROM hive_lakefs.lakefs_main.yellow_trips")
     print(f"[ok] hive_lakefs.lakefs_main.yellow_trips — {rows[0][0]:,} rows")
