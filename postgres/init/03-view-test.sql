@@ -42,33 +42,33 @@ CREATE TABLE sales.orders (
 -- Sample data
 -- -------------------------------------------------------
 
-INSERT INTO sales.customers (name, region, tier) VALUES
-    ('Acme Corp',     'west',    'enterprise'),
-    ('Globex Inc',    'east',    'premium'),
-    ('Initech LLC',   'central', 'standard'),
-    ('Umbrella Ltd',  'west',    'enterprise'),
-    ('Soylent Co',    'east',    'standard'),
-    ('Initrode Corp', 'central', 'premium');
+INSERT INTO sales.customers (customer_id, name, region, tier) VALUES
+    (1, 'Acme Corp',     'west',    'enterprise'),
+    (2, 'Globex Inc',    'east',    'premium'),
+    (3, 'Initech LLC',   'central', 'standard'),
+    (4, 'Umbrella Ltd',  'west',    'enterprise'),
+    (5, 'Soylent Co',    'east',    'standard'),
+    (6, 'Initrode Corp', 'central', 'premium');
 
-INSERT INTO sales.products (sku, product_name, category, list_price) VALUES
-    ('WDG-001', 'Widget Alpha',   'widgets',   19.99),
-    ('WDG-002', 'Widget Beta',    'widgets',   34.99),
-    ('GDG-001', 'Gadget X',       'gadgets',  149.99),
-    ('GDG-002', 'Gadget Y',       'gadgets',  249.99),
-    ('SVC-001', 'Support Tier 1', 'services',  99.00),
-    ('SVC-002', 'Support Tier 2', 'services', 199.00);
+INSERT INTO sales.products (product_id, sku, product_name, category, list_price) VALUES
+    (1, 'WDG-001', 'Widget Alpha',   'widgets',   19.99),
+    (2, 'WDG-002', 'Widget Beta',    'widgets',   34.99),
+    (3, 'GDG-001', 'Gadget X',       'gadgets',  149.99),
+    (4, 'GDG-002', 'Gadget Y',       'gadgets',  249.99),
+    (5, 'SVC-001', 'Support Tier 1', 'services',  99.00),
+    (6, 'SVC-002', 'Support Tier 2', 'services', 199.00);
 
-INSERT INTO sales.orders (customer_id, product_id, quantity, unit_price, order_date, status) VALUES
-    (1, 3,  10, 149.99, '2024-01-15', 'closed'),
-    (1, 4,   5, 249.99, '2024-02-20', 'closed'),
-    (2, 1,  50,  19.99, '2024-02-14', 'shipped'),
-    (2, 5,   1,  99.00, '2024-03-01', 'open'),
-    (3, 2,  20,  34.99, '2024-03-10', 'open'),
-    (4, 4,   8, 249.99, '2024-01-30', 'closed'),
-    (4, 6,   2, 199.00, '2024-02-28', 'shipped'),
-    (5, 1, 100,  18.00, '2024-03-05', 'open'),
-    (6, 3,   3, 149.99, '2024-03-12', 'open'),
-    (6, 5,   1,  99.00, '2024-03-12', 'open');
+INSERT INTO sales.orders (order_id, customer_id, product_id, quantity, unit_price, order_date, status) VALUES
+    (1,  1, 3,  10, 149.99, '2024-01-15', 'closed'),
+    (2,  1, 4,   5, 249.99, '2024-02-20', 'closed'),
+    (3,  2, 1,  50,  19.99, '2024-02-14', 'shipped'),
+    (4,  2, 5,   1,  99.00, '2024-03-01', 'open'),
+    (5,  3, 2,  20,  34.99, '2024-03-10', 'open'),
+    (6,  4, 4,   8, 249.99, '2024-01-30', 'closed'),
+    (7,  4, 6,   2, 199.00, '2024-02-28', 'shipped'),
+    (8,  5, 1, 100,  18.00, '2024-03-05', 'open'),
+    (9,  6, 3,   3, 149.99, '2024-03-12', 'open'),
+    (10, 6, 5,   1,  99.00, '2024-03-12', 'open');
 
 -- Grant table access to gravitino user
 GRANT ALL ON ALL TABLES IN SCHEMA sales TO gravitino;

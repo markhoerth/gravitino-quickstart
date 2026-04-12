@@ -13,6 +13,19 @@ up:
 	@echo "Removing postgres volume for clean init..."
 	docker volume rm -f gravitino-quickstart_postgres_data || true
 	$(COMPOSE) up -d --build
+	@echo "Waiting for postgres to be healthy..."
+	@for i in $$(seq 1 30); do \
+		if docker inspect gqs-postgres --format '{{.State.Health.Status}}' 2>/dev/null | grep -q healthy; then \
+			echo "postgres healthy."; \
+			break; \
+		fi; \
+		if [ $$i -eq 30 ]; then \
+			echo "postgres failed to start — restarting..."; \
+			$(COMPOSE) restart postgres; \
+			sleep 5; \
+		fi; \
+		sleep 2; \
+	done
 	@echo ""
 	@echo "  Services starting (allow ~5 minutes for full init including Iceberg data load):"
 	@echo "    Gravitino  → http://localhost:8090"
@@ -37,7 +50,7 @@ wait-for-init:
 	done
 	@echo "Init complete."
 
-## Force rebuild all custom images ignoring cache (use when up --build is not picking up changes)
+## Rebuild all custom images (run after any Dockerfile or init script changes)
 build:
 	./build.sh
 	$(COMPOSE) build --no-cache irc gravitino init trino spark-sql
@@ -131,9 +144,8 @@ help:
 	@grep -E '^##' Makefile | sed 's/## /  /'
 	@echo ""
 	@echo "Examples:"
-	@echo "  make up                    # clean start after git pull (rebuilds changed images)"
-	@echo "  make up-quick              # start without resetting volumes or rebuilding"
-	@echo "  make build                 # force rebuild all images ignoring cache"
+	@echo "  make up                    # clean start (resets postgres volume)"
+	@echo "  make up-quick              # start without resetting volumes"
 	@echo "  make spark-sql             # Spark SQL shell via Gravitino"
 	@echo "  make trino-sql             # Trino CLI via Gravitino"
 	@echo "  make psql                  # psql on demo_data"
