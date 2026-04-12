@@ -5,3 +5,4 @@ trino/gravitino-connector/
 __pycache__/
 *.pyc
 .env
+mcp/app/.venv/

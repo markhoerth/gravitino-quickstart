@@ -6,21 +6,21 @@ from mcp.client.streamable_http import streamablehttp_client
 async def main():
     client = anthropic.Anthropic()
 
-    print("Gravitino + MetricFlow MCP App")
+    print("Gravitino + Trino MCP App")
     print("Ask questions about your data. Type 'quit' to exit.\n")
 
     headers = {"Accept": "application/json, text/event-stream"}
 
     async with streamablehttp_client("http://127.0.0.1:8001/mcp/", headers=headers) as (gr, gw, _):
-        async with streamablehttp_client("http://127.0.0.1:8003/mcp", headers=headers) as (mr, mw, _):
+        async with streamablehttp_client("http://127.0.0.1:8002/mcp", headers=headers) as (mr, mw, _):
             async with ClientSession(gr, gw) as gravitino:
-                async with ClientSession(mr, mw) as metricflow:
+                async with ClientSession(mr, mw) as trino:
 
                     await gravitino.initialize()
-                    await metricflow.initialize()
+                    await trino.initialize()
 
                     g_tools = await gravitino.list_tools()
-                    m_tools = await metricflow.list_tools()
+                    m_tools = await trino.list_tools()
 
                     all_tools = []
                     for tool in g_tools.tools:
@@ -31,7 +31,7 @@ async def main():
                         })
                     for tool in m_tools.tools:
                         all_tools.append({
-                            "name": f"metricflow_{tool.name}",
+                            "name": f"trino_{tool.name}",
                             "description": tool.description,
                             "input_schema": tool.inputSchema
                         })
@@ -74,8 +74,8 @@ async def main():
                                             actual_name = tool_name[len("gravitino_"):]
                                             result = await gravitino.call_tool(actual_name, tool_input)
                                         else:
-                                            actual_name = tool_name[len("metricflow_"):]
-                                            result = await metricflow.call_tool(actual_name, tool_input)
+                                            actual_name = tool_name[len("trino_"):]
+                                            result = await trino.call_tool(actual_name, tool_input)
 
                                         tool_results.append({
                                             "type": "tool_result",
