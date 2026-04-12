@@ -8,13 +8,13 @@ COMPOSE = docker compose
 # Gravitino Quickstart — Makefile
 # ============================================================
 
-## Build images and start all services (fresh postgres volume)
+## Start all services, rebuild changed images, reset postgres volume (standard workflow after git pull)
 up:
 	@echo "Removing postgres volume for clean init..."
 	docker volume rm -f gravitino-quickstart_postgres_data || true
 	$(COMPOSE) up -d --build
 	@echo ""
-	@echo "  Services starting (allow ~2 minutes for full init):"
+	@echo "  Services starting (allow ~5 minutes for full init including Iceberg data load):"
 	@echo "    Gravitino  → http://localhost:8090"
 	@echo "    Trino      → http://localhost:8082"
 	@echo "    CloudBeaver→ http://localhost:8978"
@@ -37,7 +37,7 @@ wait-for-init:
 	done
 	@echo "Init complete."
 
-## Rebuild all custom images (run after any Dockerfile or init script changes)
+## Force rebuild all custom images ignoring cache (use when up --build is not picking up changes)
 build:
 	./build.sh
 	$(COMPOSE) build --no-cache irc gravitino init trino spark-sql
@@ -131,8 +131,9 @@ help:
 	@grep -E '^##' Makefile | sed 's/## /  /'
 	@echo ""
 	@echo "Examples:"
-	@echo "  make up                    # clean start (resets postgres volume)"
-	@echo "  make up-quick              # start without resetting volumes"
+	@echo "  make up                    # clean start after git pull (rebuilds changed images)"
+	@echo "  make up-quick              # start without resetting volumes or rebuilding"
+	@echo "  make build                 # force rebuild all images ignoring cache"
 	@echo "  make spark-sql             # Spark SQL shell via Gravitino"
 	@echo "  make trino-sql             # Trino CLI via Gravitino"
 	@echo "  make psql                  # psql on demo_data"
