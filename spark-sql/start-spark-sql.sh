@@ -1,6 +1,8 @@
 #!/bin/bash
 exec /opt/spark/bin/spark-sql \
   --master local[*] \
+  --conf spark.driver.host=gqs-spark-sql \
+  --conf spark.driver.bindAddress=0.0.0.0 \
   --conf spark.plugins=org.apache.gravitino.spark.connector.plugin.GravitinoSparkPlugin \
   --conf spark.sql.gravitino.uri=http://gqs-gravitino:8090 \
   --conf spark.sql.gravitino.metalake=demo \
