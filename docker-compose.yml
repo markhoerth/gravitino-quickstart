@@ -173,6 +173,23 @@ services:
       - gqsnet
 
 
+  # ─── Spark SQL ────────────────────────────────────────────────
+  spark-sql:
+    build: ./spark-sql
+    container_name: gqs-spark-sql
+    environment:
+      AWS_ACCESS_KEY_ID: gravitino
+      AWS_SECRET_ACCESS_KEY: gravitino123
+      AWS_REGION: us-east-1
+    entrypoint: ["/opt/spark/bin/start-spark-sql.sh"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      gravitino:
+        condition: service_healthy
+    networks:
+      - gqsnet
+
   # ─── Init ─────────────────────────────────────────────────────
   init:
     build: ./init
