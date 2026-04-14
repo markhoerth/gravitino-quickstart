@@ -4,14 +4,14 @@ A complete local Gravitino data platform for POCs and developer evaluation. One 
 
 ## What you get
 
-| Service     | URL                    | Description                                      |
-|-------------|------------------------|--------------------------------------------------|
-| Gravitino   | http://localhost:8090  | Federated metadata catalog + governance (V2 UI)  |
-| Trino       | http://localhost:8082  | SQL query engine                                 |
-| Spark SQL   | `make spark-sql`       | Spark SQL shell via Gravitino connector          |
-| CloudBeaver | http://localhost:8978  | Web SQL IDE                                      |
-| MinIO       | http://localhost:9002  | S3-compatible object storage (Iceberg data)      |
-| LakeFS      | http://localhost:8000  | Git-for-data branching layer                     |
+| Service     | URL                    | Description                                      | Username              | Password                  |
+|-------------|------------------------|--------------------------------------------------|-----------------------|---------------------------|
+| Gravitino   | http://localhost:8090  | Federated metadata catalog + governance (V2 UI)  | `gravitino`           | `gravitino`               |
+| Trino       | http://localhost:8082  | SQL query engine                                 | `admin`               | *(none)*                  |
+| Spark SQL   | `make spark-sql`       | Spark SQL shell via Gravitino connector          | —                     | —                         |
+| CloudBeaver | http://localhost:8978  | Web SQL IDE                                      | `cbadmin`             | `Admin1234`               |
+| MinIO       | http://localhost:9002  | S3-compatible object storage (Iceberg data)      | `gravitino`           | `gravitino123`            |
+| LakeFS      | http://localhost:8000  | Git-for-data branching layer                     | `gravitino-lakefs-key` | `gravitino-lakefs-secret` |
 
 ## Prerequisites
 
