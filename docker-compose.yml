@@ -162,6 +162,9 @@ services:
   trino:
     build: ./trino
     container_name: gqs-trino
+    environment:
+      SINGLESTORE_USER: mark-514bd
+      SINGLESTORE_PASSWORD: "ZOQv#4Gs9=e*;p5SqF;TNbF"
     depends_on:
       gravitino:
         condition: service_healthy
