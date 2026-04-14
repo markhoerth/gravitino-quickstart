@@ -9,7 +9,6 @@ A complete local Gravitino data platform for POCs and developer evaluation. One 
 | Gravitino   | http://localhost:8090  | Federated metadata catalog + governance (V2 UI)  | `gravitino`           | `gravitino`               |
 | Trino       | http://localhost:8082  | SQL query engine                                 | `admin`               | *(none)*                  |
 | Spark SQL   | `make spark-sql`       | Spark SQL shell via Gravitino connector          | —                     | —                         |
-| CloudBeaver | http://localhost:8978  | Web SQL IDE                                      | `cbadmin`             | `Admin1234`               |
 | MinIO       | http://localhost:9002  | S3-compatible object storage (Iceberg data)      | `gravitino`           | `gravitino123`            |
 | LakeFS      | http://localhost:8000  | Git-for-data branching layer                     | `gravitino-lakefs-key` | `gravitino-lakefs-secret` |
 
@@ -99,7 +98,6 @@ SELECT * FROM postgres_demo.public.customers;
 | Trino                | `admin`             | *(none)*               |
 | MinIO                | `gravitino`         | `gravitino123`         |
 | LakeFS               | `gravitino-lakefs-key` | `gravitino-lakefs-secret` |
-| CloudBeaver          | `cbadmin`           | `Admin1234`            |
 | PostgreSQL superuser | `postgres`          | `postgres`             |
 
 ## Make targets
